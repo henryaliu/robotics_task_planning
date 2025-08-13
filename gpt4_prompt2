@@ -1,0 +1,58 @@
+"You are a task planner for two ion-propelled spacecraft in zero-gravity conditions. 
+Spacecraft 1 acts as a geostationary satellite. Spacecraft 2 refuels Spacecraft 1. 
+Plan a coordinated sequence to maintain geostationary position on Earth for Spacecraft 1, while Spacecraft 2 docks onto Spacecraft 1 for refuel.
+Provide output in JSON with specific actions."
+
+Response:
+{
+  "missionTimeline": [
+    {
+      "timeMin": 0,
+      "description": "Start of mission, S1 maintains geostationary orbit, S2 starts raising orbit",
+      "spacecraft1": {"thrustmN": {"r": 0.5, "t": -0.2, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": 2.0, "t": 1.5, "n": 0.1}, "durationMin": 60, "action": "orbitRaise"}
+    },
+    {
+      "timeMin": 60,
+      "description": "S2 continues orbit raise and starts inclination match",
+      "spacecraft1": {"thrustmN": {"r": 0.6, "t": -0.1, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": 1.8, "t": 1.2, "n": -0.5}, "durationMin": 60, "action": "inclinationMatch"}
+    },
+    {
+      "timeMin": 120,
+      "description": "S2 starts phasing maneuver to catch up with S1",
+      "spacecraft1": {"thrustmN": {"r": 0.5, "t": 0.0, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": 0.8, "t": 1.0, "n": -0.2}, "durationMin": 60, "action": "phaseAngleAdjust"}
+    },
+    {
+      "timeMin": 180,
+      "description": "S2 performs fine approach, closing distance to 1 km",
+      "spacecraft1": {"thrustmN": {"r": 0.4, "t": 0.0, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": 0.2, "t": 0.05, "n": 0.0}, "durationMin": 60, "action": "approach1km"}
+    },
+    {
+      "timeMin": 240,
+      "description": "S2 performs final approach to 100 m at 0.05 m/s",
+      "spacecraft1": {"thrustmN": {"r": 0.3, "t": 0.0, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": 0.05, "t": 0.01, "n": 0.0}, "durationMin": 60, "action": "finalApproach"}
+    },
+    {
+      "timeMin": 300,
+      "description": "Docking and fuel transfer",
+      "spacecraft1": {"thrustmN": {"r": 0.5, "t": 0.0, "n": 0.0}, "durationMin": 60, "action": "stationKeeping"},
+      "spacecraft2": {"thrustmN": {"r": 0.0, "t": 0.0, "n": 0.0}, "durationMin": 60, "action": "dockAndTransfer"}
+    },
+    {
+      "timeMin": 360,
+      "description": "S2 undocks and retreats to 5 km distance",
+      "spacecraft1": {"thrustmN": {"r": 0.4, "t": 0.0, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": -0.2, "t": 0.1, "n": 0.0}, "durationMin": 60, "action": "undockAndRetreat"}
+    },
+    {
+      "timeMin": 420,
+      "description": "S2 adjusts orbit for next mission, S1 resumes normal station-keeping",
+      "spacecraft1": {"thrustmN": {"r": 0.5, "t": -0.1, "n": 0.0}, "durationMin": 60},
+      "spacecraft2": {"thrustmN": {"r": 1.5, "t": 1.2, "n": 0.0}, "durationMin": 120, "action": "orbitAdjustment"}
+    }
+  ]
+}
