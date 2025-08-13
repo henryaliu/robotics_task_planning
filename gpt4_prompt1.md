@@ -1,0 +1,119 @@
+"You are a task planner for a family home robot. 
+The robot can move, grab objects with a gripper, hold heavy objects with its arms and navigate around obstacles.  
+Generate a step-by-step plan for the robot to pick up a bowl from the dinner table and put it in the kitchen sink. 
+Output the plan as a JSON sequence of actions."
+
+Response:
+[
+  {
+    "action": "locate_object",
+    "object": "bowl",
+    "location": "dinner_table",
+    "parameters": {
+      "vision_mode": "object_recognition",
+      "avoid_obstacles": true
+    }
+  },
+  {
+    "action": "approach",
+    "target": "bowl",
+    "parameters": {
+      "max_speed": 0.5,
+      "min_distance": 0.2,
+      "avoid_obstacles": true
+    }
+  },
+  {
+    "action": "align_with_object",
+    "object": "bowl",
+    "parameters": {
+      "alignment_type": "centered",
+      "distance_from_object": 0.1
+    }
+  },
+  {
+    "action": "grip_object",
+    "object": "bowl",
+    "parameters": {
+      "grip_force": "medium",
+      "confirm_grip": true
+    }
+  },
+  {
+    "action": "lift_object",
+    "object": "bowl",
+    "parameters": {
+      "height": 0.15,
+      "check_balance": true
+    }
+  },
+  {
+    "action": "navigate",
+    "destination": "kitchen_sink",
+    "parameters": {
+      "avoid_obstacles": true,
+      "path_planning": "dynamic",
+      "safe_height": 0.15
+    }
+  },
+  {
+    "action": "approach",
+    "target": "kitchen_sink",
+    "parameters": {
+      "max_speed": 0.5,
+      "min_distance": 0.1,
+      "avoid_obstacles": true
+    }
+  },
+  {
+    "action": "align_with_object",
+    "object": "kitchen_sink",
+    "parameters": {
+      "alignment_type": "centered",
+      "distance_from_object": 0.05
+    }
+  },
+  {
+    "action": "lower_object",
+    "object": "bowl",
+    "parameters": {
+      "target_height": "sink_bottom",
+      "check_balance": true
+    }
+  },
+  {
+    "action": "release_object",
+    "object": "bowl",
+    "parameters": {
+      "confirm_release": true
+    }
+  },
+  {
+    "action": "retreat",
+    "parameters": {
+      "distance": 0.5,
+      "avoid_obstacles": true
+    }
+  }
+]
+
+"Follow a numbered-list format."
+Scan environment to locate the bowl on the dinner table.
+
+Calculate 3D trajectory to the bowl, avoiding obstacles.
+
+Extend arm along trajectory.
+
+Close gripper around bowl with medium force.
+
+Lift bowl to safe transport height.
+
+Navigate to the kitchen sink, avoiding obstacles.
+
+Align arm above the sink.
+
+Lower bowl into sink carefully.
+
+Release gripper to place bowl in sink.
+
+Retract arm to idle position.
