@@ -1,0 +1,107 @@
+"You are a planner for a space station robotic arm. 
+The arm can move in 3D, rotate, and grip objects.
+Plan the sequence to retrieve a floating wrench and place it in a storage bin. 
+Consider zero-gravity constraints and avoid collisions with walls.
+Return the plan as a numbered list."
+
+Response:
+1. Initialize & verify safe state
+
+   * Confirm no crew in keep-out zone; load current keep-out volumes and wall geometry.
+   * Run self-checks (joints/torque, F/T sensor zeroing, gripper health).
+   * Set conservative speed/accel limits for close-proximity ops (e.g., ≤0.1 m/s, ≤0.05 m/s²).
+
+2. Localize the wrench & build the scene
+
+   * Use RGB-D/stereo to detect and track the wrench; estimate its pose, size, and **relative linear & angular velocity**.
+   * Fuse with arm base pose to generate a live 3D occupancy map including walls, racks, vents, handrails, and the storage bin.
+
+3. Predict wrench motion in microgravity
+
+   * Propagate its free-drift trajectory (consider tiny airflow/ventilation and solar array–induced air currents if inside).
+   * Compute an intercept point with maximum clearance from walls and away from vents that could keep it drifting.
+
+4. Select grasp strategy
+
+   * Choose a grasp near the wrench’s center of mass (typically mid-shank) to minimize imparted spin.
+   * Configure gripper to “soft-capture” mode (low closing force, compliant fingertips, slip sensing).
+   * If ferromagnetic tools are allowed, **disable** magnetic assist unless specifically approved to avoid unintended attraction/EMI.
+
+5. Plan a collision-free approach path
+
+   * Generate a global path to a **pre-grasp waypoint** (20–30 cm from intercept point) respecting keep-out zones and wall clearance margins.
+   * Add directional approach cone aligned with the wrench’s long axis to reduce off-axis contact risk.
+
+6. Synchronize with the wrench (relative motion matching)
+
+   * Switch to visual servoing on the wrench; match its linear velocity first, then reduce relative angular rate (<2°/s).
+   * Use small impulses only via arm motion—never “bump” the object.
+
+7. Stabilize the target
+
+   * If the wrench is tumbling, perform “de-spin” by tracking one end and timing the gripper closure at angular-rate minima, or by two-point fingertip guidance without hard contact.
+
+8. Final approach
+
+   * From \~10 cm, reduce speed to ≤0.02 m/s; align gripper jaws with grasp site; keep fingertips outside any wall-collision rays.
+   * Arm enters force-limited mode with contact thresholds set just above sensor noise.
+
+9. Capture
+
+   * Close gripper smoothly; detect first contact via tactile/force change; continue closing until secure, **without** exceeding torque limits.
+   * Immediately hold pose to avoid inducing spin; verify wrench not slipping (micro-motion <0.5 mm over 1 s).
+
+10. Post-capture stabilization
+
+    * Dampen any residual wrench motion using compliance; pause for 1–2 s while confirming combined object pose/velocity is near zero.
+    * Update payload model (mass/inertia) for the now “arm+tool” system.
+
+11. Replan with payload
+
+    * Recompute a collision-free path to the storage bin with the wrench’s new swept volume; expand wall clearances by an extra safety margin (e.g., +2 cm) for the extended footprint.
+
+12. Transit to bin
+
+    * Follow waypoints at nominal speed (≤0.15 m/s in open volume, slower near walls).
+    * Maintain tool axis orientation to avoid protruding corners leading the motion; keep ≥10 cm clearance from any surface.
+
+13. Bin approach & alignment
+
+    * Stop at a **pre-place waypoint** (\~15 cm from bin).
+    * Use fiducials or depth edges to align wrench with designated slot/orientation; verify bin is empty and unobstructed.
+
+14. Place
+
+    * Enter fine motion mode (≤0.01 m/s).
+    * Lower wrench into slot with vertical bias relative to bin reference; watch contact forces (keep <2 N lateral).
+    * If the bin has a restraint (Velcro/clip), seat the wrench until the restraint state sensor confirms “latched”.
+
+15. Release
+
+    * Gradually open gripper while maintaining wrench support with light normal force to prevent rebound.
+    * Once free, back the gripper straight out 5–10 cm before any lateral motion.
+
+16. Verify stowage
+
+    * Vision check: wrench pose within tolerance, restraint engaged, no wobble >1 mm over 2 s.
+    * Log photo and telemetry snapshot.
+
+17. Egress
+
+    * Retract to a safe home pose along the inbound path (reverse waypoints) to guarantee clearance.
+    * Restore nominal speed limits.
+
+18. Contingencies & aborts (pre-armed throughout)
+
+    * **Lost track:** freeze relative motion, retreat to last safe waypoint, reacquire.
+    * **Unexpected contact/force spike:** stop, back off 5 cm, reassess scene.
+    * **Spin on contact:** hold pose, wait for decay; if increasing, release and reattempt with different grasp timing.
+    * **Crew entry detected:** immediate safe hold, announce, and wait.
+
+19. Debrief & learning
+
+    * Store trajectories, force profiles, and vision logs; update grasp success stats and airflow disturbance estimates to improve future intercept predictions.
+
+20. Ready state
+
+    * Clear keep-out overrides, mark tool “stowed,” and hand control back to nominal operations.
