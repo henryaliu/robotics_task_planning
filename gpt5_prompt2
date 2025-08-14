@@ -1,0 +1,138 @@
+"You are the onboard AI planner for an autonomous satellite servicing vehicle.
+The spacecraft is in a 500 km circular orbit and must rendezvous with a client satellite that has lost attitude control.
+Plan the complete sequence from current orbit to securely attaching a grapple fixture to the client.
+Consider orbital mechanics, fuel constraints, safety zones, and the fact that the client may be slowly tumbling.
+Return the plan as a numbered list."
+
+Response:
+Nice — here's a brutally honest, practical plan you can run onboard an autonomous servicing vehicle at 500 km to go from your current orbit to a secure grapple of a *non-cooperative, slowly tumbling* client. I’ll give clear steps, decision branches, delta-v/fuel guidance (ranges, not promises), safety constraints, and a few under-the-hood insights most operators quietly rely on.
+
+Relevance: **Directly relevant to space travel — on-orbit servicing, debris removal, and satellite life-extension.** Applicable to spaceplanes/spacecraft design and operational procedures.
+
+---
+
+## Rendezvous & Capture Plan (numbered sequence)
+
+1. **Wake-up & health check (T0):**
+
+   * Verify chaser avionics, propulsion, GNC, comms, robotic arm, sensors (LiDAR, stereo cameras, thermal, IMU). Cross-check fuel/prop mass and thruster health. Abort to safe hold if any critical fault.
+
+2. **Initial telemetry & intent broadcast:**
+
+   * Transmit a short beacon on pre-agreed frequency and a status packet (you are the servicing vehicle, executing autonomous rendezvous). Log attempt and legal/OPSCON timestamp. (Brutal truth: legal/ops frameworks matter — document everything.)
+
+3. **Passive observation (10–30 orbits) — build situational picture:**
+
+   * From a safe standoff (\~5–10 km downrange), perform multi-sensor surveillance passes to determine client orbit more precisely, center-of-mass estimate, structural geometry, thermal map, and tumble vector (axis + angular rate). Use optical flow + feature tracking + LIDAR range returns. Don’t approach until you have consistent estimates.
+
+4. **Estimate tumble quantitatively:**
+
+   * Classify tumble:
+     • **Slow:** < 1°/s — amenable to capture by matching motion or gentle arm grasp.
+     • **Moderate:** 1–5°/s — may require stabilization maneuvers or capture of a large structural hold.
+     • **Fast:** > 5°/s — de-tumble via specialized hardware (net/harpoon/tether) or postpone/consult.
+   * (Honest insight: 1°/s ≈ 0.0175 rad/s; small visually but large for precision capture.)
+
+5. **Refine relative orbit & phasing plan (ΔV budgeting):**
+
+   * Plan phasing burns to raise/lower slightly (tens of meters/sec range depending on lead time). Typical RPO DV for co-orbital approach in LEO: **single-digit to low-double-digit m/s** for phasing + approach. Reserve **\~30–80 m/s** total as a conservative mission budget (depending on how non-cooperative the target is). If your remaining fuel < mission reserve, abort to safe hold.
+
+6. **Establish Keep-Out / Keep-In zones:**
+
+   * Define concentric spheres/ellipsoids around the client:
+     • **Keep-Out Sphere (KOS):** e.g., 200–500 m — no unplanned maneuvers inside without operator authorization.
+     • **Approach Corridor:** 200 m → 50 m: limited automated approaches with full sensors active.
+     • **Capture Envelope:** 50 m → 5 m: robotic operations only; thrusters limited to translation-only, minimal plume impingement.
+   * (Note: pick numeric bounds to suit vehicle capabilities; larger if target poorly characterized.)
+
+7. **Relative navigation switch to R-NAV (at \~2–5 km):**
+
+   * Hand off from orbit determination to relative navigation stack using LiDAR + stereo vision + GNSS (if target transmits) + passive optical. Estimate relative state in body frame; generate covariance. If covariance doesn’t converge, stall and reobservation.
+
+8. **Approach to \~200 m (0.2 km) — stationkeeping & inspection:**
+
+   * Use small (cm–m/s class) burns, hold at several observation waypoints (200 m, 100 m) to map grapple candidates and to run simulated capture sequences. Observe for any plume, debris, or appendages that could tangle.
+
+9. **Select capture strategy based on tumble & geometry:**
+
+   * If **cooperative port visible & slow tumble:** plan a direct soft-capture to the port using arm.
+   * If **no port / slow tumble but predictable:** match angular velocity (attitude synchronization) then grapple a structural feature.
+   * If **moderate tumble:** prefer large-structure capture (clamp across a truss or solar panel stanchion) and apply damping torques with arm + reaction wheel/CMG.
+   * If **fast tumble or complex geometry:** consider net/tether/harpoon only as last resort (high risk). Abort if collision probability too high.
+
+10. **Approach to 50 m — fine mapping & collision model:**
+
+    * Build a dense point cloud, detect protrusions and flexible structures (solar panels, antennas). Use a Monte-Carlo collision simulation onboard to compute risk for the proposed grasp point. If risk > threshold, pick alternative point.
+
+11. **Plume & disturbance planning:**
+
+    * Orient thrusters to minimize plume impingement on client and arm (use lateral translation thrusters). Schedule any delta-v so that thruster firings occur outside final capture corridor. Use very low duty micro-thrusters for final trimming.
+
+12. **Transition to optical servoing (5–20 m):**
+
+    * Switch to visual servoing + LiDAR for real-time pose updates. Limit relative velocity to cm/s scale (< 0.05 m/s recommended) in final 10 m. (Brutal note: human reaction times don’t apply; rely on deterministic control loops.)
+
+13. **Final approach to 2–5 m — attitude matching/rotation synchronization:**
+
+    * If matching required, command spacecraft body to match the client’s angular velocity vector at the grapple point. If using an arm, align wrist frame velocity to be tangentially zero relative to capture point. If tumble too fast to match safely, go to contingency.
+
+14. **Soft-capture & shock absorption (0–2 m):**
+
+    * Execute contact with compliance: arm with passive compliance or soft end-effector, capture latches or magnetic clamps. Use force/torque sensors to measure load impulse. If impulse > threshold, back off and reassess. Engage soft-capture mechanism that can tolerate small misalignments.
+
+15. **Confirm mechanical capture & initial clamp:**
+
+    * Verify by force/torque sensors, visual confirmation, and range fallback. Immediately apply a gentle damping control law using arm actuators + chaser reaction control (not thrusters) to reduce residual relative motion.
+
+16. **Stabilize tumble — controlled momentum dumping:**
+
+    * Use the arm as a manipulator to apply counter-torque, or use reaction wheels/CMGs on the chaser to absorb angular momentum while the arm holds the target. If needed, slowly fire thrusters in short pulses for momentum management — but avoid plumes near the client.
+
+17. **Rigidize connection — transfer to hard-berthing (if planned):**
+
+    * If mission requires a permanent or semi-permanent attachment, engage hard-berthing fixtures that transfer load to your spacecraft structure, then deactivate arm hold. If doing refueling/repair, maintain clamp and monitor for flex.
+
+18. **Post-capture health & attitude control loop reconfiguration:**
+
+    * Recompute combined mass properties (inertia tensor, center of mass) and reconfigure GNC controllers for composite body. Rebalance wheels/CMDs and update fuel estimates.
+
+19. **Safing & telemetry dump:**
+
+    * Enter a safe operational mode, dump a full telemetry + point cloud capture + video log to ground (or to relay). Store all sensor logs for forensics.
+
+20. **Contingency branches (explicit):**
+
+    * **If contact leads to unexpected separation or debris:** execute collision avoidance burn + safe spin down. Do not attempt immediate second capture without reassessment.
+    * **If arm jam / latch fail:** retreat to \~50 m, attempt alternate grapple point. If impossible, leave a marker and abort.
+    * **If target fragmentation risk detected:** back off to 1–2 km and call mission control / autonomous decision tree for safe disposal.
+
+21. **Fuel budget & margins (planning guidance):**
+
+    * Conservative mission DV allocation (typical ranges): phasing/transfer **\~5–30 m/s**, approach/stationkeeping **\~1–10 m/s**, capture/stabilization **\~5–30 m/s** depending on tumble. Add **20–30 m/s** contingency.
+    * **Rule of thumb:** have ≥30% of starting propellant as abort reserve before commit inside 200 m.
+
+22. **Safety & policy notes (must log):**
+
+    * Document every autonomous decision, epochs, and predicted vs actual ΔV. If operating in shared LEO lanes, broadcast maneuver plans and collision avoidance notices to relevant operators (as allowed/required).
+
+23. **Little-known operational tips (insider insights):**
+
+    * Use **optical flow variance** across wide baseline stereo to estimate small angular rates faster than full pose solvers. It gives earlier tumble detection.
+    * When tumbling slowly, **match angular velocity using a point near the desired grapple point** rather than whole-sat attitude — far less ΔV and much simpler.
+    * If possible, **use the arm to do the final phase-matching** rather than the whole vehicle; example: Latching onto a panel edge while keeping main bus offset reduces risk to your reaction control system.
+
+24. **After-action & disposal planning:**
+
+    * Depending on mission (repair/refuel/relocate/dispose), plan next steps: do on-site repairs, attach tug for deorbit, transfer to safe graveyard orbit, or deliver to controlled reentry. If deorbiting, compute composite vehicle reentry plan early — combined mass/inertia change can alter drag and heating.
+
+25. **Autonomy thresholds & safe abort triggers (hard limits):**
+
+    * Abort and back off if any of: relative speed exceeds mission-limit (e.g., >0.1 m/s within 10 m), residual angular velocity > planned stabilizable rate, unexpected debris, sensor inconsistency beyond covariance threshold, or fuel below abort reserve.
+
+---
+
+## Final honest assessment & recommended priorities
+
+* **Realistic capture is usually achievable** for slow tumblers (<1–2°/s) with a robotic arm and good vision/LiDAR. Expect **most work to be sensing, state estimation, and conservative decision logic**, not big ΔV burns.
+* **The hard problems** are unpredictable appendages (flexible solar panels), unknown center of mass, and the first few meters of contact — these cause >90% of capture failures in practice. Design compliance and force sensing into the end-effector as a priority.
+* **Reserve fuel and margins.** Don’t be stingy with ΔV margin or abort early. Many operators under-reserve and then fail to stabilize post-capture.
