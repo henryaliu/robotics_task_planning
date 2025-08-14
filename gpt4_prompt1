@@ -6,7 +6,7 @@ Output the plan as a JSON sequence of actions."
 Response:
 [
   {
-    "action": "locate_object",
+    "action": "locate_object", 
     "object": "bowl",
     "location": "dinner_table",
     "parameters": {
